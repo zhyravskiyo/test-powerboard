@@ -36,7 +36,7 @@ function sendAcceptedResponse(response) {
     response,
     200,
     { 'Content-Type': 'application/json' },
-    JSON.stringify({ notificationResponse: '[accepted]' }),
+    JSON.stringify({ notificationResponse: '[accepted3]' }),
   )
 }
 

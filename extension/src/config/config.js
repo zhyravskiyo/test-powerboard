@@ -6,7 +6,7 @@ let paydockConfig;
 let ctpClient;
 
 function getModuleConfig() {
-    const extensionBaseUrl = process.env.CONNECT_SERVICE_URL ?? 'https://extension.paydock-commercetools-app.jetsoftpro.dev';
+    const extensionBaseUrl = process.env.CONNECT_SERVICE_URL ?? 'https://extension-dev.paydock-commercetools-app.jetsoftpro.dev';
     return {
         removeSensitiveData: true,
         port: config.port,
@@ -33,9 +33,9 @@ async function getPaydockApiUrl() {
 
 function getExtensionConfig() {
     return {
-        clientId: config.clientId ?? 'kjQW8-nXHq4CfKVdFzEjUl6c',
-        clientSecret: config.clientSecret ?? 'Z1B_FP71UbE8xwcdAy_Q5FR7ztHSZZRJ',
-        projectKey: config.projectKey ?? 'paydockecomm',
+        clientId: config.clientId ?? 'AZZyk1XK07kTK2tl6qpeAECc',
+        clientSecret: config.clientSecret ?? 'QUrCNKyvZQ0aOdz_uCSnXMAlvYYppjsg',
+        projectKey: config.projectKey ?? 'dev-paydock',
         apiUrl: config.apiUrl ?? 'https://api.europe-west1.gcp.commercetools.com',
         authUrl: config.authUrl ?? 'https://auth.europe-west1.gcp.commercetools.com'
     }

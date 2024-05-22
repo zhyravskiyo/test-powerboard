@@ -362,17 +362,7 @@ async function cardFraud3DsInBuildCharge({configurations, input, amount, currenc
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-
-    if (result.status === 'Success') {
-        if (isDirectCharge) {
-            result.paydockStatus = 'paydock-paid';
-        } else {
-            result.paydockStatus = 'paydock-authorize';
-        }
-    } else {
-        result.paydockStatus = 'paydock-failed';
-    }
-
+    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
     return result;
 }
 
@@ -542,17 +532,7 @@ async function cardFraudInBuild3DsStandaloneCharge({configurations, input, amoun
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-
-    if (result.status === 'Success') {
-        if (isDirectCharge) {
-            result.paydockStatus = 'paydock-paid';
-        } else {
-            result.paydockStatus = 'paydock-authorize';
-        }
-    } else {
-        result.paydockStatus = 'paydock-failed';
-    }
-
+    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
     return result;
 }
 
@@ -575,8 +555,23 @@ async function card3DsCharge({configurations, input, amount, currency, vaultToke
             type: 'card'
         })
     }
-
+    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
     return result;
+}
+
+async function getPaydockStatusByAPIResponse(configurations, paymentStatus) {
+    let paydockStatus = 'paydock-failed'
+    const isDirectCharge = configurations.card_direct_charge === 'Enable';
+    if (paymentStatus === 'Success') {
+        if (isDirectCharge) {
+            paydockStatus = 'paydock-paid';
+        } else {
+            paydockStatus = 'paydock-authorize';
+        }
+    } else {
+        paydockStatus = 'paydock-failed';
+    }
+    return paydockStatus;
 }
 
 async function card3DsInBuildCharge({configurations, input, amount, currency, vaultToken}) {
@@ -750,16 +745,6 @@ async function cardFraudInBuildCharge({configurations, input, amount, currency, 
         result.paydockStatus = c.STATUS_TYPES.FAILED;
     }
 
-    if (result.status === 'Success') {
-        if (isDirectCharge) {
-            result.paydockStatus = 'paydock-paid';
-        } else {
-            result.paydockStatus = 'paydock-authorize';
-        }
-    } else {
-        result.paydockStatus = 'paydock-failed';
-    }
-
     return result;
 }
 
@@ -874,16 +859,7 @@ async function cardCustomerCharge({
         authorization: !isDirectCharge
     }
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    if (result.status === 'Success') {
-        if (isDirectCharge) {
-            result.paydockStatus = 'paydock-paid';
-        } else {
-            result.paydockStatus = 'paydock-authorize';
-        }
-    } else {
-        result.paydockStatus = 'paydock-failed';
-    }
-
+    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status)
     return result;
 }
 
@@ -917,17 +893,7 @@ async function cardCharge({configurations, input, amount, currency, vaultToken})
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-
-    if (result.status === 'Success') {
-        if (configurations.card_direct_charge !== 'Enable') {
-            result.paydockStatus = 'paydock-authorize';
-        } else {
-            result.paydockStatus = 'paydock-paid';
-        }
-    } else {
-        result.paydockStatus = 'paydock-failed';
-    }
-
+    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
     return result;
 }
 
@@ -967,11 +933,12 @@ async function bankAccountFlow({configurations, input, amount, currency, vaultTo
     return result;
 }
 
-async function apmFlow({configurations, input, amount, currency, paymentSource, typePayment}) {
+async function apmFlow({configurations, input, amount, currency, paymentSource, paymentType}) {
+
     let isDirectCharge;
     let fraudServiceId = null;
     let fraud = false;
-    if (typePayment === 'Zippay') {
+    if (paymentType === 'Zippay') {
         isDirectCharge = configurations.alternative_payment_methods_zippay_direct_charge === 'Enable';
         fraudServiceId = configurations.alternative_payment_methods_zippay_fraud_service_id;
         fraud = configurations.alternative_payment_methods_zippay_fraud === "Enable";
@@ -998,22 +965,18 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
     }
 
     if (fraud && fraudServiceId) {
+        const fraudData = getAdditionalFields(input);
+        fraudData.first_name = input.billing_first_name ?? '';
+        fraudData.last_name = input.billing_last_name ?? '';
+        fraudData.email = input.billing_email ?? '';
+        fraudData.phone = input.billing_phone ?? '';
         request.fraud = {
             service_id: fraudServiceId,
-            data: {}
+            data: fraudData
         }
     }
-
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    if (result.status === 'Success') {
-        if (!isDirectCharge) {
-            result.paydockStatus = 'paydock-authorize';
-        } else {
-            result.paydockStatus = 'paydock-paid';
-        }
-    } else {
-        result.paydockStatus = 'paydock-failed';
-    }
+    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
     return result;
 }
 
@@ -1327,9 +1290,9 @@ async function createCharge(data, params = {}, returnObject = false) {
 
         if (isFraud) {
             const addressLine2 = data.customer.payment_source.address_line2 ?? '';
-            if(addressLine2 === ''){
-                delete(data.customer.payment_source.address_line2);
-                delete(data.fraud.data.address_line2);
+            if (addressLine2 === '') {
+                delete (data.customer.payment_source.address_line2);
+                delete (data.fraud.data.address_line2);
             }
         }
         const {response} = await callPaydock(url, data, 'POST');
