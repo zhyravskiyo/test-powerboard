@@ -934,7 +934,6 @@ async function bankAccountFlow({configurations, input, amount, currency, vaultTo
 }
 
 async function apmFlow({configurations, input, amount, currency, paymentSource, paymentType}) {
-
     let isDirectCharge;
     let fraudServiceId = null;
     let fraud = false;
@@ -975,6 +974,7 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
             data: fraudData
         }
     }
+
     const result = await createCharge(request, {directCharge: isDirectCharge});
     result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
     return result;
