@@ -2,13 +2,13 @@
 
 ## Overview
 
-The Paydock Payment Connector facilitates integration between commercetools and Paydock, allowing for efficient management of payment processes. This repository is divided into two main modules:
+Integrate your commercetools with Paydock using the Paydock Payment Connector and efficiently manage your payment processes. This repository is divided into two main modules:
 
-- **Extension Module**: Serves as middleware, linking commercetools with Paydock. Configured to trigger on payment creation or updates within commercetools, it ensures these events are appropriately handled by Paydock.
+- **Extension Module**: Serves as middleware, linking commercetools with Paydock. This is configured to trigger on payment creation and updates within commercetools, ensuring efficient event handling by Paydock.
 
-- **Notification Module**: Handles asynchronous notifications from Paydock regarding payment status changes (e.g., authorization, charge, refund). This module updates the corresponding payment status in commercetools.
+- **Notification Module**: Handles asynchronous notifications from Paydock regarding payment status changes such as authorization, charge, refund, and so on. This module updates the corresponding payment status in commercetools.
 
-Both modules are essential for the seamless integration of commercetools and Paydock.
+You must have both modules to integrate your commercetools and Paydock.
 
 ## Prerequisites
 
@@ -18,33 +18,34 @@ Ensure you have the following prerequisites before proceeding with installation:
 - An active commercetools account with API credentials.
 - Git installed on your machine.
 
-#
 
-## Installation Instructions
+## Install the Modules 
 
- In this manual you have **two ways** to do this. With `docker run...` and `docker-compose`
+ You can install the modules using either `docker run...` or `docker-compose`. The following subsections detail both methods.
 
-#
 
 ---
-- ### With `docker run...`:
+### Install with `docker run...`
 ---
 
-### Step 1: Clone the Repository
+The following steps describe how to install using `docker run...`.
+
+1. Clone the Repository.
 
 ```
 git clone https://github.com/PayDock/e-commerce-commercetools-payment-connector
 ```
 
-and navigate to the project-directory
+2. Navigate to the project-directory.
 ```
 cd e-commerce-commercetools-payment-connector
 ```
 
-### Step 2: Configure Environment Variables
+3. Configure the environment variables for your Extension Module and your Notification Module. 
 
-#### For the Extension Module
-Navigate to the extension directory and set up the environment variables:
+* **Extension Module**
+
+Navigate to the extension directory and set up the following environment variables:
 
 ```
 echo 'PAYDOCK_INTEGRATION_CONFIG={
@@ -57,10 +58,11 @@ echo 'PAYDOCK_INTEGRATION_CONFIG={
 ```
 
 
-Replace the placeholder values with your actual Commercetools API credentials.
+Replace the placeholder values with your Commercetools API credentials.
 
 
-#### For the Notification Module
+* **Notification Module**
+
 Navigate to the notification directory and set up the environment variables:
 
 ```
@@ -73,49 +75,53 @@ echo 'PAYDOCK_INTEGRATION_CONFIG={
 }' > ./notification/.env
 ```
 
-Replace the placeholder values with your actual Commercetools API credentials.
+Replace the placeholder values with your Commercetools API credentials.
 
-### Step 3: Build the docker images and run the application
+4. Build the docker images and run the application.
 
-Build the docker images:
+Build the following docker images:
 
 - `docker build -t commercetools-payment-connector-extention -f cnf/extension/Dockerfile .`
 
 - `docker build -t commercetools-payment-connector-notification -f cnf/notification/Dockerfile .`
 
-and launch the Docker container with the following command:
+5. Launch the Docker container with the following command:
 
 - `docker run -e PAYDOCK_INTEGRATION_CONFIG=xxxxxx -p 8082:8082 commercetools-payment-connector-extention`
  
 - `docker run -e PAYDOCK_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-payment-connector-notification`
 
-(Replace the placeholder `xxxxxx` for PAYDOCK_INTEGRATION_CONFIG variable  with your Json-escapes string)
+6. Replace the placeholder `xxxxxx` for PAYDOCK_INTEGRATION_CONFIG variable  with your Json-escapes string.
 ###
-The Extension Module will be accessible at: http://your_domain:8082
+The Extension Module is accessible at: http://your_domain:8082.
 
-The Notification Module will be accessible at: http://your_domain:8443
+The Notification Module is accessible at: http://your_domain:8443.
 
-#
+
 
 ---
-- ### With `docker-compose`:
+### Install with `docker-compose`
 ---
 
-### Step 1: Clone the Repository
+The following steps describe how to install the modules using `docker compose...`.
+
+1. Clone the Repository.
 
 ```
 git clone https://github.com/PayDock/e-commerce-commercetools-payment-connector
 ```
 
-and navigate to the project-directory
+2. Navigate to the project-directory.
+
 ```
 cd e-commerce-commercetools-payment-connector
 ```
 
-### Step 2: Configure Environment Variables
+3. Configure Environment Variables.
 
-- #### For the Extension Module
-Navigate to the extension directory and set up the environment variables:
+* **Extension Module**
+
+Navigate to the extension directory and set up the environment variables.
 
 ```
 echo 'PAYDOCK_INTEGRATION_CONFIG={
@@ -127,12 +133,11 @@ echo 'PAYDOCK_INTEGRATION_CONFIG={
 }' > ./extension/.env
 ```
 
+Replace the placeholder values with your Commercetools API credentials.
 
-Replace the placeholder values with your actual Commercetools API credentials.
+* **Notification Module**
 
-
- - #### For the Notification Module
-Navigate to the notification directory and set up the environment variables:
+Navigate to the notification directory and set up the environment variables.
 
 ```
 echo 'PAYDOCK_INTEGRATION_CONFIG={
@@ -144,24 +149,23 @@ echo 'PAYDOCK_INTEGRATION_CONFIG={
 }' > ./notification/.env
 ```
 
-Replace the placeholder values with your actual Commercetools API credentials.
+Replace the placeholder values with your Commercetools API credentials.
  
 
+4. Build the docker images and run the application.
 
-### Step 3: Build the docker images and run the application
-
-- Replace the placeholder `xxxxxx` for PAYDOCK_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
+* Replace the placeholder `xxxxxx` for PAYDOCK_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
 
 
-- Launch docker-compose, docker images will be built automatically:
+* Launch docker-compose. The docker images will be built automatically:
 
 ```
     docker-compose up -d
 ```
 
 
-###
-The Extension Module will be accessible at: http://your_domain:8082
 
-The Notification Module will be accessible at: http://your_domain:8443
+The Extension Module is accessible at: http://your_domain:8082.
+
+The Notification Module is accessible at: http://your_domain:8443.
 
