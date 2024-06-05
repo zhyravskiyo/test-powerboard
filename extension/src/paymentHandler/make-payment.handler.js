@@ -27,8 +27,11 @@ async function execute(paymentObject) {
     const [response] = await Promise.all([makePayment(makePaymentRequestObj)])
     if (response.status === 'Failure') {
         const errorMessage = response.message ?? "Invalid transaction details"
-        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE,  JSON.stringify( {status : "Failure", message : errorMessage})));
-        paymentActions = await  deleteCustomFields(actions, paymentObject, customFieldsToDelete);
+        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
+            status: "Failure",
+            message: errorMessage
+        })));
+        paymentActions = await deleteCustomFields(actions, paymentObject, customFieldsToDelete);
         return {
             actions: paymentActions
         };
@@ -44,7 +47,7 @@ async function execute(paymentObject) {
     if (paymentMethod) {
         actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_PAYMENT_TYPE, paymentMethod));
     }
-    if(paydockStatus) {
+    if (paydockStatus) {
         actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_PAYDOCK_PAYMENT_STATUS, paydockStatus));
     }
     if (paydockTransactionId) {
@@ -74,11 +77,53 @@ async function execute(paymentObject) {
     if (addTransactionAction) {
         actions.push(addTransactionAction)
     }
-    customFieldsToDelete.push(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE)
-    paymentActions = await  deleteCustomFields(actions, paymentObject, customFieldsToDelete)
+
+    if (paydockStatus) {
+        const {orderState, orderPaymentState} = await getCommercetoolsStatusesByPaydockStatus(paydockStatus)
+        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
+            orderPaymentStatus: orderPaymentState,
+            orderStatus: orderState
+        })));
+    } else {
+        customFieldsToDelete.push(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE)
+    }
+    paymentActions = await deleteCustomFields(actions, paymentObject, customFieldsToDelete)
     return {
         actions: paymentActions
     }
+}
+
+
+async function getCommercetoolsStatusesByPaydockStatus(paydockStatus) {
+    let orderPaymentState
+    let orderState
+
+    switch (paydockStatus) {
+        case 'paydock-paid':
+            orderPaymentState = 'Paid'
+            orderState = 'Open'
+            break
+        case 'paydock-pending':
+        case 'paydock-authorize':
+        case 'paydock-requested':
+            orderPaymentState = 'Pending'
+            orderState = 'Open'
+            break
+        case 'paydock-cancelled':
+        case 'paydock-failed':
+            orderPaymentState = 'Failed'
+            orderState = 'Cancelled'
+            break
+        case 'paydock-refunded':
+            orderPaymentState = 'Paid'
+            orderState = 'Cancelled'
+            break
+        default:
+            orderPaymentState = 'Pending'
+            orderState = 'Open'
+    }
+
+    return {orderState, orderPaymentState}
 }
 
 async function deleteCustomFields(actions, paymentObject, customFieldsToDelete) {
@@ -92,4 +137,5 @@ async function deleteCustomFields(actions, paymentObject, customFieldsToDelete) 
     }
     return actions
 }
+
 export default {execute}

@@ -62,7 +62,7 @@ async function processNotification(
 
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
-    const status = await getNewStatuses(notification)
+    const {status, paymentStatus, orderStatus} = await getNewStatuses(notification)
     const chargeId = notification._id
     const currentPayment = payment
     const currentVersion = payment.version
@@ -75,7 +75,7 @@ async function processWebhook(event, payment, notification, ctpClient) {
         {
             action: 'setCustomField',
             name: 'PaydockPaymentStatus',
-            value: status.paydock
+            value: status
         },
         {
             action: 'setCustomField',
@@ -88,6 +88,7 @@ async function processWebhook(event, payment, notification, ctpClient) {
     ]
     try {
         await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+        await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
         result.status = 'Success'
     } catch (error) {
         result.status = 'Failure'
@@ -249,16 +250,13 @@ async function processFraudNotification(event, payment, notification, ctpClient)
                     action: 'setCustomField',
                     name: 'PaydockTransactionId',
                     value: chargeId
-                },
-                {
-                    action: 'changePaymentState',
-                    paymentState: commerceToolsPaymentStatus
                 }
             ]
-
-
+            
             try {
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+                await updateOrderStatus(ctpClient, currentPayment.id, commerceToolsPaymentStatus, 'Open');
+
                 result.status = 'Success'
 
                 await addPaydockLog({
@@ -294,6 +292,8 @@ async function processFraudNotification(event, payment, notification, ctpClient)
                     }
                 ]
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+                await updateOrderStatus(ctpClient, currentPayment.id, 'Failed', 'Cancelled');
+
             }
         } else {
             result.message = 'Fraud data not found in localstorage'
@@ -432,6 +432,8 @@ async function processRefundSuccessNotification(event, payment, notification, ct
 
             try {
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+                await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Cancelled');
+
                 result.status = 'Success'
                 result.message = `Refunded ${refunded}`
             } catch (error) {
@@ -449,6 +451,35 @@ async function processRefundSuccessNotification(event, payment, notification, ct
     }
     return result
 
+}
+
+
+
+async function updateOrderStatus(
+    ctpClient,
+    id,
+    paymentStatus,
+    orderStatus
+) {
+    try {
+        let order = await ctpClient.fetchOrderByNymber(ctpClient.builder.orders, id)
+        if(order){
+            order = order.body
+            const updateOrderActions = [
+                {
+                    action: 'changePaymentState',
+                    paymentState: paymentStatus,
+                },
+                {
+                    action: 'changeOrderState',
+                    orderState: orderStatus
+                }
+            ]
+            await ctpClient.update(ctpClient.builder.orders, order.id, order.version, updateOrderActions)
+        }
+    } catch (error) {
+        console.log(error)
+    }
 }
 
 
@@ -485,41 +516,48 @@ async function getNewStatuses(notification) {
 
     let paydockPaymentStatus
     let commerceToolsPaymentStatus
-
+    let orderPaymentStatus
 
     switch (status.toUpperCase()) {
         case 'COMPLETE':
             paydockPaymentStatus = 'paydock-paid'
             commerceToolsPaymentStatus = 'Paid'
+            orderPaymentStatus = 'Open'
             break
         case 'PENDING':
         case 'PRE_AUTHENTICATION_PENDING':
             paydockPaymentStatus = notification.capture ? 'paydock-pending' : 'paydock-authorize'
             commerceToolsPaymentStatus = 'Pending'
+            orderPaymentStatus = 'Open'
             break
         case 'CANCELLED':
             paydockPaymentStatus = 'paydock-cancelled'
             commerceToolsPaymentStatus = 'Failed'
+            orderPaymentStatus = 'Cancelled'
             break
         case 'REFUNDED':
             paydockPaymentStatus = 'paydock-refunded'
             commerceToolsPaymentStatus = 'Paid'
+            orderPaymentStatus = 'Cancelled'
             break
         case 'REQUESTED':
             paydockPaymentStatus = 'paydock-requested'
             commerceToolsPaymentStatus = 'Pending'
+            orderPaymentStatus = 'Open'
             break
         case 'DECLINED':
         case 'FAILED':
             paydockPaymentStatus = 'paydock-failed'
             commerceToolsPaymentStatus = 'Failed'
+            orderPaymentStatus = 'Cancelled'
             break
         default:
-            paydockPaymentStatus = ''
-            commerceToolsPaymentStatus = ''
+            paydockPaymentStatus = 'paydock-pending'
+            commerceToolsPaymentStatus = 'Pending'
+            orderPaymentStatus = 'Open'
     }
-
-    return {paydock: paydockPaymentStatus, commerceTools: commerceToolsPaymentStatus}
+    
+    return {status: paydockPaymentStatus, paymentStatus: commerceToolsPaymentStatus, orderStatus: orderPaymentStatus}
 }
 
 

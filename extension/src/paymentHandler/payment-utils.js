@@ -40,7 +40,6 @@ function getPaydockStatus(paymentMethod, responseBodyJson) {
     return paydockStatus
 }
 
-
 function isValidJSON(jsonString) {
     if (typeof jsonString === 'undefined') return true
     try {

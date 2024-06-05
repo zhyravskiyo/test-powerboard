@@ -362,7 +362,7 @@ async function cardFraud3DsInBuildCharge({configurations, input, amount, currenc
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
+    result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -532,7 +532,7 @@ async function cardFraudInBuild3DsStandaloneCharge({configurations, input, amoun
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
+    result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -555,13 +555,13 @@ async function card3DsCharge({configurations, input, amount, currency, vaultToke
             type: 'card'
         })
     }
-    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
+    const isDirectCharge =  configurations.card_direct_charge === 'Enable';
+    result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
-async function getPaydockStatusByAPIResponse(configurations, paymentStatus) {
+async function getPaydockStatusByAPIResponse(isDirectCharge, paymentStatus) {
     let paydockStatus = 'paydock-failed'
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
     if (paymentStatus === 'Success') {
         if (isDirectCharge) {
             paydockStatus = 'paydock-paid';
@@ -859,7 +859,7 @@ async function cardCustomerCharge({
         authorization: !isDirectCharge
     }
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status)
+    result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status)
     return result;
 }
 
@@ -893,7 +893,7 @@ async function cardCharge({configurations, input, amount, currency, vaultToken})
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
+    result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -934,6 +934,7 @@ async function bankAccountFlow({configurations, input, amount, currency, vaultTo
 }
 
 async function apmFlow({configurations, input, amount, currency, paymentSource, paymentType}) {
+
     let isDirectCharge;
     let fraudServiceId = null;
     let fraud = false;
@@ -941,6 +942,7 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
         isDirectCharge = configurations.alternative_payment_methods_zippay_direct_charge === 'Enable';
         fraudServiceId = configurations.alternative_payment_methods_zippay_fraud_service_id;
         fraud = configurations.alternative_payment_methods_zippay_fraud === "Enable";
+
     } else {
         isDirectCharge = true;
         fraudServiceId = configurations.alternative_payment_methods_afterpay_v1_fraud_service_id;
@@ -976,7 +978,7 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.paydockStatus = await getPaydockStatusByAPIResponse(configurations, result.status);
+    result.paydockStatus = await getPaydockStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
