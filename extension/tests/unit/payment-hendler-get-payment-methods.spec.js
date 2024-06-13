@@ -16,14 +16,17 @@ jest.mock('../../src/config/config.js')
 config.getModuleConfig.mockResolvedValue(moduleConfigData)
 config.getCtpClient.mockResolvedValue({create: jest.fn(), builder: {customObjects: {}}})
 
-describe('::getPaymentMethods::', () => {
+describe('Unit::getPaymentMethods::', () => {
     const server = setupServer();
+
     beforeEach(() => {
         server.listen(3001, 'localhost')
     })
+
     afterEach(() => {
         server.close();
     });
+
     test('get sandbox configuration', () => {
         configData.sandbox_mode = "Yes";
         config.getPaydockConfig.mockResolvedValue(configData)
