@@ -14,7 +14,7 @@ async function setupExtensionResources(apiExtensionBaseUrl) {
       await ensureResources(
           ctpClient,
           ctpConfig.projectKey,
-          apiExtensionBaseUrl || moduleConfig.apiExtensionBaseUrl,
+          process.env.CONNECT_SERVICE_URL || moduleConfig.apiExtensionBaseUrl,
           generateBasicAuthorizationHeaderValue(ctpConfig.projectKey),
       )
   )
