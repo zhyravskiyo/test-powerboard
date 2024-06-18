@@ -66,7 +66,7 @@ function getLogger() {
         logger = bunyan.createLogger({
             name: 'ctp-paydock-integration-extension',
             stream: process.stderr,
-            level: config.getModuleConfig()?.logLevel || bunyan.INFO,
+            level: config.getModuleConfig()?.logLevel || bunyan.ERROR,
         })
     return logger
 }
@@ -104,5 +104,3 @@ export default {
     readAndParseJsonFile,
     addPaydockLog
 }
-
-
